@@ -1,5 +1,5 @@
 import { file, gc, serve } from "bun";
-import { afterEach, describe, it, expect } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import { readFile, readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
@@ -26,6 +26,25 @@ it("should work for a file", async () => {
     },
   });
   const response = await fetch(`http://${server.hostname}:${server.port}`);
+  expect(await response.text()).toBe(textToExpect);
+  server.stop();
+});
+
+it("should work for a file over https with no optional options", async () => {
+  const fixture = resolve(import.meta.dir, "./fetch.js.txt");
+  const textToExpect = readFileSync(fixture, "utf-8");
+
+  const server = serve({
+    port: port++,
+    fetch(req) {
+      return new Response(file(fixture));
+    },
+    keyFile: "./kaBeech/serverKey.pem",
+    certFile: "./kaBeech/serverCrt.pem",
+  });
+  const response = await fetch(`https://${server.hostname}:${server.port}`, {
+    credentials: "include",
+  });
   expect(await response.text()).toBe(textToExpect);
   server.stop();
 });
@@ -536,7 +555,7 @@ describe("parallell", () => {
       },
     });
 
-    for (let i = 0; i < count; ) {
+    for (let i = 0; i < count;) {
       let responses = await Promise.all([
         fetch(`http://${server.hostname}:${server.port}`),
         fetch(`http://${server.hostname}:${server.port}`),
@@ -563,7 +582,7 @@ describe("parallell", () => {
       },
     });
 
-    for (let i = 0; i < count; ) {
+    for (let i = 0; i < count;) {
       let responses = await Promise.all([
         fetch(`http://${server.hostname}:${server.port}`),
         fetch(`http://${server.hostname}:${server.port}`),
@@ -807,8 +826,8 @@ describe("should support Content-Range with Bun.file()", () => {
 
   for (let [start, end] of emptyRanges) {
     it(`empty range: ${start} - ${end}`, async () => {
-      const last =
-        start === emptyRanges.at(-1)[0] && end === emptyRanges.at(-1)[1];
+      const last = start === emptyRanges.at(-1)[0] &&
+        end === emptyRanges.at(-1)[1];
 
       try {
         getFull();
