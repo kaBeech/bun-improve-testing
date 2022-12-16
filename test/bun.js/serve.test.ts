@@ -30,7 +30,26 @@ it("should work for a file", async () => {
   server.stop();
 });
 
-it("should work for a file over https with no optional options", async () => {
+it("should work for a file over https with no optional options when manually reading the file into memory", async () => {
+  const fixture = resolve(import.meta.dir, "./fetch.js.txt");
+  const textToExpect = readFileSync(fixture, "utf-8");
+
+  const server = serve({
+    port: port++,
+    async fetch(req) {
+      return new Response(await file(fixture).arrayBuffer());
+    },
+    keyFile: "./kaBeech/serverKey.pem",
+    certFile: "./kaBeech/serverCrt.pem",
+  });
+  const response = await fetch(`https://${server.hostname}:${server.port}`, {
+    credentials: "include",
+  });
+  expect(await response.text()).toBe(textToExpect);
+  server.stop();
+});
+
+it("should work for a file over https with no optional options or workarounds", async () => {
   const fixture = resolve(import.meta.dir, "./fetch.js.txt");
   const textToExpect = readFileSync(fixture, "utf-8");
 
